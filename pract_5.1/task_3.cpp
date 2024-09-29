@@ -38,6 +38,7 @@ void generateUniqueNumbersFile(const string& filename, size_t count) {
     }
     else {
         cerr << "Не удалось открыть файл для записи.\n";
+        return;
     }
 }
 
@@ -75,8 +76,7 @@ void generateOutputFile(const string& filename, const vector<unsigned char> bitA
     }
     else {
         cerr << "Не удалось открыть выходной файл.\n";
-        // Возвращаем ошибку через исключение 
-        throw runtime_error("Не удалось открыть выходной файл.");
+        return;
     }
 }
 

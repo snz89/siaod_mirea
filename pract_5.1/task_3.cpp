@@ -1,4 +1,4 @@
-#include "task_3.h"
+п»ї#include "task_3.h"
 #include <iostream>
 #include <fstream>
 #include <vector>
@@ -7,22 +7,22 @@
 #include <numeric>
 
 namespace {
-    const size_t MAX_NUMBERS = 9000000; // Максимальное кол-во чисел в файле
-    const size_t BIT_ARRAY_SIZE = MAX_NUMBERS / 8; // Размер битового массива в байтах
-    const size_t MIN_VALUE = 1000000; // Минимальное число в файле
-    const size_t MAX_VALUE = 9999999; // Максимальное число в файлк
+    const size_t MAX_NUMBERS = 9000000; // РњР°РєСЃРёРјР°Р»СЊРЅРѕРµ РєРѕР»-РІРѕ С‡РёСЃРµР» РІ С„Р°Р№Р»Рµ
+    const size_t BIT_ARRAY_SIZE = MAX_NUMBERS / 8; // Р Р°Р·РјРµСЂ Р±РёС‚РѕРІРѕРіРѕ РјР°СЃСЃРёРІР° РІ Р±Р°Р№С‚Р°С…
+    const size_t MIN_VALUE = 1000000; // РњРёРЅРёРјР°Р»СЊРЅРѕРµ С‡РёСЃР»Рѕ РІ С„Р°Р№Р»Рµ
+    const size_t MAX_VALUE = 9999999; // РњР°РєСЃРёРјР°Р»СЊРЅРѕРµ С‡РёСЃР»Рѕ РІ С„Р°Р№Р»Рє
 }
 
 void generateUniqueNumbersFile(const string& filename, size_t count) {
     if (count > (MAX_VALUE - MIN_VALUE + 1)) {
-        cerr << "Ошибка: некорректный диапазон или количество чисел.\n";
+        cerr << "РћС€РёР±РєР°: РЅРµРєРѕСЂСЂРµРєС‚РЅС‹Р№ РґРёР°РїР°Р·РѕРЅ РёР»Рё РєРѕР»РёС‡РµСЃС‚РІРѕ С‡РёСЃРµР».\n";
         return;
     }
 
     vector<int> numbers(MAX_VALUE - MIN_VALUE + 1);
     iota(numbers.begin(), numbers.end(), MIN_VALUE);
 
-    // Перемешивание вектора
+    // РџРµСЂРµРјРµС€РёРІР°РЅРёРµ РІРµРєС‚РѕСЂР°
     random_device rd;
     mt19937 g(rd());
     shuffle(numbers.begin(), numbers.end(), g);
@@ -37,12 +37,12 @@ void generateUniqueNumbersFile(const string& filename, size_t count) {
         outputFile.close();
     }
     else {
-        cerr << "Не удалось открыть файл для записи.\n";
+        cerr << "РќРµ СѓРґР°Р»РѕСЃСЊ РѕС‚РєСЂС‹С‚СЊ С„Р°Р№Р» РґР»СЏ Р·Р°РїРёСЃРё.\n";
         return;
     }
 }
 
-// Заполнение битового массива данными из файла
+// Р—Р°РїРѕР»РЅРµРЅРёРµ Р±РёС‚РѕРІРѕРіРѕ РјР°СЃСЃРёРІР° РґР°РЅРЅС‹РјРё РёР· С„Р°Р№Р»Р°
 void fillBitArray(const string& filename, vector<unsigned char>& bitArray) {
     ifstream inputFile(filename);
     if (inputFile.is_open()) {
@@ -56,12 +56,12 @@ void fillBitArray(const string& filename, vector<unsigned char>& bitArray) {
         inputFile.close();
     }
     else {
-        cerr << "Не удалось открыть входной файл.\n";
+        cerr << "РќРµ СѓРґР°Р»РѕСЃСЊ РѕС‚РєСЂС‹С‚СЊ РІС…РѕРґРЅРѕР№ С„Р°Р№Р».\n";
         return;
     }
 }
 
-// Формирование выходного файла с отсортированными числами
+// Р¤РѕСЂРјРёСЂРѕРІР°РЅРёРµ РІС‹С…РѕРґРЅРѕРіРѕ С„Р°Р№Р»Р° СЃ РѕС‚СЃРѕСЂС‚РёСЂРѕРІР°РЅРЅС‹РјРё С‡РёСЃР»Р°РјРё
 void generateOutputFile(const string& filename, const vector<unsigned char> bitArray) {
     ofstream outputFile(filename);
     if (outputFile.is_open()) {
@@ -75,13 +75,13 @@ void generateOutputFile(const string& filename, const vector<unsigned char> bitA
         outputFile.close();
     }
     else {
-        cerr << "Не удалось открыть выходной файл.\n";
+        cerr << "РќРµ СѓРґР°Р»РѕСЃСЊ РѕС‚РєСЂС‹С‚СЊ РІС‹С…РѕРґРЅРѕР№ С„Р°Р№Р».\n";
         return;
     }
 }
 
 void Task_3(size_t numberCount) {
-    // Битовый массив
+    // Р‘РёС‚РѕРІС‹Р№ РјР°СЃСЃРёРІ
     vector<unsigned char> bitArray(BIT_ARRAY_SIZE, 0);
 
     generateUniqueNumbersFile("input.txt", numberCount);
@@ -92,10 +92,10 @@ void Task_3(size_t numberCount) {
 
     generateOutputFile("output.txt", bitArray);
 
-    // Замер времени окончания сортировки
+    // Р—Р°РјРµСЂ РІСЂРµРјРµРЅРё РѕРєРѕРЅС‡Р°РЅРёСЏ СЃРѕСЂС‚РёСЂРѕРІРєРё
     auto end = chrono::high_resolution_clock::now();
     auto duration = chrono::duration_cast<chrono::milliseconds>(end - start);
 
-    cout << "Сортировка завершена. Время выполнения: " << duration.count() << " мс\n";
-    cout << "Размер битового массива: " << bitArray.size() / (1024.0 * 1024.0) << " МБ\n";
+    cout << "РЎРѕСЂС‚РёСЂРѕРІРєР° Р·Р°РІРµСЂС€РµРЅР°. Р’СЂРµРјСЏ РІС‹РїРѕР»РЅРµРЅРёСЏ: " << duration.count() << " РјСЃ\n";
+    cout << "Р Р°Р·РјРµСЂ Р±РёС‚РѕРІРѕРіРѕ РјР°СЃСЃРёРІР°: " << bitArray.size() / (1024.0 * 1024.0) << " РњР‘\n";
 }

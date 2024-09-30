@@ -16,4 +16,6 @@ void Task_1() {
 int main()
 {
     setlocale(0, "");
+    size_t numCount = 1024 * 1024 * 8;
+    Task_1a();
 }

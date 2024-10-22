@@ -5,6 +5,7 @@
 #include <chrono>
 #include <random>
 #include <numeric>
+#include <algorithm>
 
 namespace {
     const size_t MAX_NUMBERS = 9000000; // Максимальное кол-во чисел в файле

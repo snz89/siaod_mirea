@@ -3,9 +3,9 @@
 #include <string>
 #include <vector>
 #include <random>
-#include <numeric>
 #include <vector>
 #include <chrono>
+#include <algorithm>
 
 using namespace std;
 
@@ -13,7 +13,7 @@ using namespace std;
 struct Record {
     int passbookId;
     int groupId;
-    char fullName[50];
+    char fullName[56];
 };
 
 // Запись пары ключ-смещение для таблицы смещений
@@ -29,7 +29,10 @@ struct OffsetRecord {
     }
 };
 
-// Создание файла с информацией о студентах
+// Генерация текстового файла с информацией о студентах
+// Предусловие: fileName - имя файла, numRecords - количество записей
+// Постусловие: создан текстовый файл с numRecords записей о студентах, 
+// номера зачеток уникальны и находятся в диапазоне [10000, 99999]
 void generateTextFile(const char* fileName, int numRecords) {
     const int minPassbookId = 10000;
     const int maxPassbookId = 99999;
@@ -61,8 +64,10 @@ void generateTextFile(const char* fileName, int numRecords) {
 }
 
 // Конвертация информации о студентах в бинарный файл
+// Предусловие: textFile - имя текстового файла, binaryFile - имя бинарного файла
+// Постусловие: создан бинарный файл, содержащий записи о студентах из textFile
 void textToBinary(const char* textFile, const char* binaryFile) {
-    // Opening files
+    // Открытие файлов
     ifstream text(textFile);
     ofstream binary(binaryFile, ios::binary);
 
@@ -81,11 +86,15 @@ void textToBinary(const char* textFile, const char* binaryFile) {
     while (text >> record.passbookId >> record.groupId) {
         text.ignore();
         text.getline(record.fullName, sizeof(record.fullName));
-        binary.write(reinterpret_cast<char*>(&record), sizeof(record));
+        binary.write((char*)(&record), sizeof(record));
     }
 }
 
 // Линейный поиск студента по ключу
+// Предусловие: binaryFile - имя существующего бинарного файла, 
+// searchKey - ключ для поиска
+// Постусловие: возвращен указатель на копию найденной записи 
+// или nullptr, если запись не найдена. Файл закрыт.
 Record* linearSearch(const char* binaryFile, int searchKey) {
     ifstream binary(binaryFile, ios::binary);
 
@@ -96,7 +105,7 @@ Record* linearSearch(const char* binaryFile, int searchKey) {
 
     Record record;
 
-    while (binary.read(reinterpret_cast<char*>(&record), sizeof(record))) {
+    while (binary.read((char*)(&record), sizeof(record))) {
         if (record.passbookId == searchKey) {
             return new Record(record);
         }
@@ -119,7 +128,7 @@ vector<OffsetRecord> createOffsetTable(const char* binaryFile) {
     Record record;
     long offset = 0;
     
-    while (binary.read(reinterpret_cast<char*>(&record), sizeof(record))) {
+    while (binary.read((char*)(&record), sizeof(record))) {
         offsetTable.push_back({record.passbookId, offset});
         offset += sizeof(Record);
     }
@@ -132,6 +141,8 @@ vector<OffsetRecord> createOffsetTable(const char* binaryFile) {
 }
 
 // Генерация таблицы смещений для однородного бинарного поиска
+// Предусловие: размер таблицы со смещениями на записи
+// Постусловие: таблицы со смещениями для поиска
 vector<int> generateDeltaTable(int tableSize) {
     vector<int> deltaTable;
     int j = 1;
@@ -143,6 +154,8 @@ vector<int> generateDeltaTable(int tableSize) {
 }
 
 // Однородный бинарный поиск с таблицей смещений
+// Предусловие: искомый ключ, таблица со смещениями на записи
+// Постусловие: смещение на запись
 long searchOffset(int key, const vector<OffsetRecord>& offsetTable) {
     int tableSize = offsetTable.size();
     if (tableSize == 0) {
@@ -185,6 +198,8 @@ long searchOffset(int key, const vector<OffsetRecord>& offsetTable) {
 }
 
 // Поиск информации о студенте по смещению
+// Предусловие: смещение на запись, название бинарного файла
+// Постусловие: запись о студенте (Record)
 Record* searchRecordByOffset(long offset, const char* binaryFile) {
     ifstream binary(binaryFile, ios::binary);
 
@@ -220,7 +235,7 @@ void Task2(int searchKey) {
         cout << "Key " << searchKey << " is not found\n";
     }
 
-    cout << "Time: " << duration << "\n";
+    cout << "Time: " << duration.count() << "\n";
 }
 
 void Task3(int searchKey) {
@@ -246,14 +261,15 @@ void Task3(int searchKey) {
     auto end = chrono::high_resolution_clock::now();
     auto duration = chrono::duration_cast<chrono::milliseconds>(end - start);
 
-    cout << "Time: " << duration << "\n";
+    cout << "Time: " << duration.count() << "\n";
 }
 
 int main() {
-    // generateTextFile("data.txt", 10000);
-    // textToBinary("data.txt", "data.bin");
+    // Task 1
+    generateTextFile("data.txt", 100);
+    textToBinary("data.txt", "data.bin");
 
-    int searchKey = 59505;
+    int searchKey = 37600;
 
     Task2(searchKey);
     Task3(searchKey);

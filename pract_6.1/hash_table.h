@@ -12,6 +12,7 @@ private:
     int hashFunction2(int key);
     void resize();
 public:
+    HashTable();
     HashTable(int size);
     ~HashTable();
     bool insert(int key, const string& fullName, const string& address);

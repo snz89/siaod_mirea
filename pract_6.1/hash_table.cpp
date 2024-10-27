@@ -4,6 +4,16 @@
 
 using namespace std;
 
+HashTable::HashTable() {
+    this->size = 10;
+    this->table = new BankAccount*[10];
+    this->count = 0;
+
+    for (int i = 0; i < 10; i++) {
+        this->table[i] = nullptr;
+    }
+}
+
 HashTable::HashTable(int size) {
     this->size = size;
     this->table = new BankAccount*[size];
@@ -62,7 +72,7 @@ bool HashTable::insert(int key, const string& fullName, const string& address) {
         return false;
     }
     // Проверка на загрузку
-    if (this->count >= this->size * 0.75) {
+    if (this->count >= this->size * 0.7) {
         this->resize();
     }
 
@@ -115,7 +125,10 @@ void HashTable::print() {
     }
     for (int i = 0; i < this->size; i++) {
         if (this->table[i] != nullptr && !this->table[i]->deleted) {
-            cout << "[" << i << "] "<< "ID: " << this->table[i]->id << ", Full Name: " << this->table[i]->fullName << ", Address: " << this->table[i]->address << "\n";
+            cout << "[" << i << "] "
+            << "ID: " << this->table[i]->id
+            << ", Full Name: " << this->table[i]->fullName
+            << ", Address: " << this->table[i]->address << "\n";
         }
     }
 }

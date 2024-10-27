@@ -6,6 +6,7 @@
 #include <vector>
 #include <chrono>
 #include <algorithm>
+#include <numeric>
 
 using namespace std;
 

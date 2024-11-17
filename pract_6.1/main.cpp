@@ -34,9 +34,9 @@ int main() {
                 if (inputIsbn >= 100000000000 && inputIsbn <= 999999999999) break;
                 cout << "ISBN must be 12 digits" << "\n";
             }
-            cout << "Enter name: ";
+            cout << "Enter author: ";
             cin >> inputAuthor;
-            cout << "Enter address: ";
+            cout << "Enter title: ";
             cin >> inputTitle;
             if (table.insert(inputIsbn, inputAuthor, inputTitle))
                 cout << "Book with ISBN " << inputIsbn << " added" << "\n";

@@ -1,6 +1,7 @@
 #include "hash_table.h"
 
 #include <iostream>
+#include <format>
 
 using namespace std;
 
@@ -25,7 +26,7 @@ HashTable::HashTable(int size) {
  * @param key Ключ для хеширования.
  * @return Индекс в хеш-таблице, соответствующий данному ключу.
  */
-int HashTable::hashFunction(int key) {
+int HashTable::hashFunction(unsigned long long key) {
     return key % this->size;
 }
 
@@ -36,12 +37,12 @@ int HashTable::hashFunction(int key) {
  */
 void HashTable::rehash() {
     int newSize = size * 2;
-    vector<list<BankAccount>> newTable(newSize);
+    vector<list<Book>> newTable(newSize);
 
     for (int i = 0; i < size; ++i) {
-        for (const auto& account : table[i]) {
-            int newIndex = account.id % newSize;
-            newTable[newIndex].push_back(account);
+        for (const auto& book : table[i]) {
+            int newIndex = book.isbn % newSize;
+            newTable[newIndex].push_back(book);
         }
     }
 
@@ -73,15 +74,15 @@ double HashTable::loadFactor() const {
  * @param address Адрес владельца счета.
  * @return true, если элемент успешно добавлен, false — если элемент с таким ключом уже существует.
  */
-bool HashTable::insert(int key, const string& fullName, const string& address) {
+bool HashTable::insert(unsigned long long key, const string& fullName, const string& address) {
     if (loadFactor() >= 0.75) {
         rehash();
     }
 
     int index = hashFunction(key);
 
-    for (const auto& account : table[index]) {
-        if (account.id == key) {
+    for (const auto& book : table[index]) {
+        if (book.isbn == key) {
             return false;
         }
     }
@@ -101,11 +102,11 @@ bool HashTable::insert(int key, const string& fullName, const string& address) {
  * @param key Ключ элемента, который нужно удалить.
  * @return true, если элемент был успешно удален, false — если элемент с таким ключом не найден.
  */
-bool HashTable::remove(int key) {
+bool HashTable::remove(unsigned long long key) {
     int index = hashFunction(key);
 
     for (auto it = table[index].begin(); it != table[index].end(); ++it) {
-        if (it->id == key) {
+        if (it->isbn == key) {
             table[index].erase(it);
             this->count--;
             return true;
@@ -124,12 +125,12 @@ bool HashTable::remove(int key) {
  * @param key Ключ элемента, который нужно найти.
  * @return Указатель на элемент с указанным ключом, или nullptr, если элемент не найден.
  */
-BankAccount* HashTable::search(int key) {
+Book* HashTable::search(unsigned long long key) {
     int index = hashFunction(key);
 
-    for (auto& account : table[index]) {
-        if (account.id == key) {
-            return &account;
+    for (auto& book : table[index]) {
+        if (book.isbn == key) {
+            return &book;
         }
     }
 
@@ -143,17 +144,18 @@ BankAccount* HashTable::search(int key) {
  * которые в ней хранятся. Если ячейка пуста, выводится "{}".
  */
 void HashTable::print() const {
+    // Заголовок таблицы
+    cout << format("{:<5} {:<15} {:<30} {:<40}\n", "Index", "ISNB", "Author", "Title");
+    cout << string(90, '-') << "\n";
+
+    // Вывод данных
     for (int i = 0; i < size; i++) {
-        cout << "[" << i << "]: ";
         if (table[i].empty()) {
-            cout << "{}\n";
+            cout << format("{:<5} {:<15} {:<30} {:<40}\n", i, "-", "-", "-");
         } else {
-            for (const auto& account : table[i]) {
-                cout << "{ID: " << account.id
-                        << ", Name: " << account.fullName
-                        << ", Address: " << account.address << "} ";
+            for (const auto& book : table[i]) {
+                cout << format("{:<5} {:<15} {:<30} {:<40}\n", i, book.isbn, book.author, book.title);
             }
-            cout << "\n";
         }
     }
 }

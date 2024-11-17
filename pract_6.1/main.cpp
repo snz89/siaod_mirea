@@ -1,5 +1,5 @@
 #include "hash_table.h"
-#include "bank_account.h"
+#include "book.h"
 
 #include <iostream>
 #include <string>
@@ -8,13 +8,13 @@ using namespace std;
 
 int main() {
     int menu = 0;
-    int inputKey = 0;
-    string inputName = "";
-    string inputAddress = "";
+    unsigned long long inputIsbn = 0;
+    string inputAuthor = "";
+    string inputTitle = "";
     HashTable table = HashTable();
 
     while (true) {
-        cout << "==============================\n"
+        cout << string(90, '=') << "\n"
         << "1. Insert account\n"
         << "2. Remove account\n"
         << "3. Search account\n"
@@ -23,56 +23,56 @@ int main() {
         << "6. Exit\n"
         << "---> ";
         cin >> menu;
-        cout << "==============================\n";
+        cout << string(90, '=') << "\n";
 
         switch (menu)
         {
         case 1:
             while (true) {
                 cout << "Enter key: ";
-                cin >> inputKey;
-                if (inputKey >= 1000000 && inputKey <= 9999999) break;
-                cout << "Key must be 7 digits" << "\n";
+                cin >> inputIsbn;
+                if (inputIsbn >= 100000000000 && inputIsbn <= 999999999999) break;
+                cout << "ISBN must be 12 digits" << "\n";
             }
             cout << "Enter name: ";
-            cin >> inputName;
+            cin >> inputAuthor;
             cout << "Enter address: ";
-            cin >> inputAddress;
-            if (table.insert(inputKey, inputName, inputAddress))
-                cout << "Bank account with ID " << inputKey << " added" << "\n";
+            cin >> inputTitle;
+            if (table.insert(inputIsbn, inputAuthor, inputTitle))
+                cout << "Bank account with ISBN " << inputIsbn << " added" << "\n";
             else
-                cout << "Bank account with ID " << inputKey << " already exists" << "\n";
+                cout << "Bank account with ISBN " << inputIsbn << " already exists" << "\n";
             break;
         case 2:
             cout << "Enter key: ";
-            cin >> inputKey;
-            if (table.remove(inputKey))
-                cout << "Bank account with ID " << inputKey << " removed" << "\n";
+            cin >> inputIsbn;
+            if (table.remove(inputIsbn))
+                cout << "Bank account with ISBN " << inputIsbn << " removed" << "\n";
             else
-                cout << "Bank account with ID " << inputKey << " does not exist" << "\n";
+                cout << "Bank account with ISBN " << inputIsbn << " does not exist" << "\n";
             break;
         case 3:
             cout << "Enter key: ";
-            cin >> inputKey;
-            if (table.search(inputKey)) {
-                BankAccount* account = table.search(inputKey);
-                cout << "Bank account with ID " << inputKey << " found ---> Name: "
-                     << account->fullName << ", Address: " << account->address << "\n";
+            cin >> inputIsbn;
+            if (table.search(inputIsbn)) {
+                Book* account = table.search(inputIsbn);
+                cout << "Bank account with ISBN " << inputIsbn << " found ---> Author: "
+                     << account->author << ", Title: " << account->title << "\n";
             }
             else
-                cout << "Bank account with ID " << inputKey << " does not exist" << "\n";
+                cout << "Bank account with ISBN " << inputIsbn << " does not exist" << "\n";
             break;
         case 4:
             table.print();
             break;
         case 5:
-            table.insert(1234567, "John Doe", "123 Main St");
-            table.insert(2345678, "Jane Smith", "456 Elm St");
-            table.insert(3456789, "Bob Johnson", "789 Oak St");
-            table.insert(4567890, "Alice Brown", "101 Pine St");
-            table.insert(5678901, "Charlie Davis", "202 Maple St");
-            table.insert(6789012, "David Wilson", "303 Cedar St");
-            table.insert(7890123, "Eva Martinez", "404 Birch St");
+            table.insert(9780140449136, "Homer", "The Odyssey");
+            table.insert(9780451524935, "George Orwell", "1984");
+            table.insert(9780061120084, "Harper Lee", "To Kill a Mockingbird");
+            table.insert(9780439023528, "Suzanne Collins", "The Hunger Games");
+            table.insert(9780743273565, "F. Scott Fitzgerald", "The Great Gatsby");
+            table.insert(9780316769488, "J.D. Salinger", "The Catcher in the Rye");
+            table.insert(9780143039433, "Mark Twain", "Adventures of Huckleberry Finn");
             cout << "Table filled with 7 accounts" << "\n";
             break;
         case 6:

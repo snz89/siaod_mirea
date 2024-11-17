@@ -39,28 +39,28 @@ int main() {
             cout << "Enter address: ";
             cin >> inputTitle;
             if (table.insert(inputIsbn, inputAuthor, inputTitle))
-                cout << "Bank account with ISBN " << inputIsbn << " added" << "\n";
+                cout << "Book with ISBN " << inputIsbn << " added" << "\n";
             else
-                cout << "Bank account with ISBN " << inputIsbn << " already exists" << "\n";
+                cout << "Book with ISBN " << inputIsbn << " already exists" << "\n";
             break;
         case 2:
             cout << "Enter key: ";
             cin >> inputIsbn;
             if (table.remove(inputIsbn))
-                cout << "Bank account with ISBN " << inputIsbn << " removed" << "\n";
+                cout << "Book with ISBN " << inputIsbn << " removed" << "\n";
             else
-                cout << "Bank account with ISBN " << inputIsbn << " does not exist" << "\n";
+                cout << "Book with ISBN " << inputIsbn << " does not exist" << "\n";
             break;
         case 3:
             cout << "Enter key: ";
             cin >> inputIsbn;
             if (table.search(inputIsbn)) {
                 Book* account = table.search(inputIsbn);
-                cout << "Bank account with ISBN " << inputIsbn << " found ---> Author: "
+                cout << "Book with ISBN " << inputIsbn << " found ---> Author: "
                      << account->author << ", Title: " << account->title << "\n";
             }
             else
-                cout << "Bank account with ISBN " << inputIsbn << " does not exist" << "\n";
+                cout << "Book with ISBN " << inputIsbn << " does not exist" << "\n";
             break;
         case 4:
             table.print();

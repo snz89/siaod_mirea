@@ -4,131 +4,156 @@
 
 using namespace std;
 
-HashTable::HashTable() {
-    this->size = 10;
-    this->table = new BankAccount*[10];
-    this->count = 0;
-
-    for (int i = 0; i < 10; i++) {
-        this->table[i] = nullptr;
-    }
-}
-
+/**
+ * @brief Конструктор хеш-таблицы с заданным размером.
+ * 
+ * Инициализирует хеш-таблицу с указанным размером. По умолчанию размер составляет 10.
+ * 
+ * @param size Размер хеш-таблицы.
+ */
 HashTable::HashTable(int size) {
-    this->size = size;
-    this->table = new BankAccount*[size];
-    this->count = 0;
-
-    for (int i = 0; i < size; i++) {
-        this->table[i] = nullptr;
-    }
+        this->size = size;
+        this->count = 0;
+        this->table.resize(size);
 }
 
-HashTable::~HashTable() {
-    for (int i = 0; i < this->size; i++) {
-        if (this->table[i] != nullptr) {
-            delete this->table[i];
-        }
-    }
-    delete[] table;
-}
-
+/**
+ * @brief Хеш-функция для вычисления индекса.
+ * 
+ * Вычисляет индекс для ключа на основе его значения и размера хеш-таблицы.
+ * 
+ * @param key Ключ для хеширования.
+ * @return Индекс в хеш-таблице, соответствующий данному ключу.
+ */
 int HashTable::hashFunction(int key) {
     return key % this->size;
 }
 
-int HashTable::hashFunction2(int key) {
-    return 1 + (key % (this->size - 1));
-}
+/**
+ * @brief Рехеширование хеш-таблицы.
+ * 
+ * Увеличивает размер хеш-таблицы вдвое и перераспределяет все элементы.
+ */
+void HashTable::rehash() {
+    int newSize = size * 2;
+    vector<list<BankAccount>> newTable(newSize);
 
-// Увеличение размера таблицы в 2 раза
-void HashTable::resize() {
-    // Сохранение старых данных
-    int formerSize = this->size;
-    BankAccount** formerTable = this->table;
-
-    // Увеличение таблицы
-    this->size *= 2;
-    this->table = new BankAccount*[this->size];
-
-    for (int i = 0; i < this->size; i++) {
-        this->table[i] = nullptr;
-    }
-    this->count = 0;
-
-    // Рехеширование в соответстсвии с новым размером таблицы
-    for (int i = 0; i < formerSize; i++) {
-        if (formerTable[i] != nullptr && !formerTable[i]->deleted) {
-            this->insert(formerTable[i]->id, formerTable[i]->fullName, formerTable[i]->address);
-            delete formerTable[i]; // Освобождение памяти для удаленных элементов
+    for (int i = 0; i < size; ++i) {
+        for (const auto& account : table[i]) {
+            int newIndex = account.id % newSize;
+            newTable[newIndex].push_back(account);
         }
     }
 
-    delete[] formerTable;
+    this->size = newSize;
+    this->table = move(newTable);
 }
 
+/**
+ * @brief Вычисляет коэффициент загрузки хеш-таблицы.
+ * 
+ * Коэффициент загрузки определяется как отношение количества элементов 
+ * к текущему размеру хеш-таблицы.
+ * 
+ * @return Коэффициент загрузки хеш-таблицы.
+ */
+double HashTable::loadFactor() const {
+    return (double)count / size;
+}
+
+/**
+ * @brief Вставка нового элемента в хеш-таблицу.
+ * 
+ * Добавляет новую запись в хеш-таблицу. Если коэффициент загрузки превышает 0.75, 
+ * выполняется перехеширование для увеличения размера таблицы.
+ * Если элемент с таким же ключом уже существует, вставка не происходит.
+ * 
+ * @param key Ключ записи (уникальный идентификатор).
+ * @param fullName Полное имя владельца счета.
+ * @param address Адрес владельца счета.
+ * @return true, если элемент успешно добавлен, false — если элемент с таким ключом уже существует.
+ */
 bool HashTable::insert(int key, const string& fullName, const string& address) {
-    if (this->search(key) != nullptr) {
-        return false;
-    }
-    // Проверка на загрузку
-    if (this->count >= this->size * 0.7) {
-        this->resize();
+    if (loadFactor() >= 0.75) {
+        rehash();
     }
 
-    BankAccount* newAccount = new BankAccount{key, fullName, address};
+    int index = hashFunction(key);
 
-    int index = this->hashFunction(key);
-    int step = this->hashFunction2(key);
-
-    // Поиск открытой ячейки
-    while (this->table[index] != nullptr && !this->table[index]->deleted) {
-        index = (index + step) % this->size;
+    for (const auto& account : table[index]) {
+        if (account.id == key) {
+            return false;
+        }
     }
 
-    table[index] = newAccount;
+    table[index].push_back({key, fullName, address});
     this->count++;
     return true;
 }
 
+/**
+ * @brief Удаление элемента из хеш-таблицы по ключу.
+ * 
+ * Ищет элемент с указанным ключом и удаляет его из хеш-таблицы. Если элемент найден, 
+ * его удаляют, и количество элементов уменьшается. Если элемент с таким ключом не найден, 
+ * возвращается false.
+ * 
+ * @param key Ключ элемента, который нужно удалить.
+ * @return true, если элемент был успешно удален, false — если элемент с таким ключом не найден.
+ */
 bool HashTable::remove(int key) {
-    BankAccount* account = this->search(key);
+    int index = hashFunction(key);
 
-    if (account != nullptr && !account->deleted) {
-        account->deleted = true;
-        this->count--;
-        return true;
+    for (auto it = table[index].begin(); it != table[index].end(); ++it) {
+        if (it->id == key) {
+            table[index].erase(it);
+            this->count--;
+            return true;
+        }
     }
-    return false;
+
+    return false; // Элемент с таким ключом не найден
 }
 
+/**
+ * @brief Поиск элемента в хеш-таблице по ключу.
+ * 
+ * Ищет элемент с указанным ключом в хеш-таблице. Если элемент найден, возвращает указатель 
+ * на соответствующую запись. Если элемент с таким ключом не найден, возвращает nullptr.
+ * 
+ * @param key Ключ элемента, который нужно найти.
+ * @return Указатель на элемент с указанным ключом, или nullptr, если элемент не найден.
+ */
 BankAccount* HashTable::search(int key) {
-    int index = this->hashFunction(key);
-    int step = this->hashFunction2(key);
+    int index = hashFunction(key);
 
-    // Поиск элемента среди закрытых ячеек
-    while (this->table[index] != nullptr) {
-        if (this->table[index]->id == key && !this->table[index]->deleted) {
-            return table[index];
+    for (auto& account : table[index]) {
+        if (account.id == key) {
+            return &account;
         }
-        index = (index + step) % this->size;
     }
 
     return nullptr;
 }
 
-void HashTable::print() {
-    // Проверка на пустоту
-    if (count == 0) {
-        cout << "[] There is no data\n";
-        return;
-    }
-    for (int i = 0; i < this->size; i++) {
-        if (this->table[i] != nullptr && !this->table[i]->deleted) {
-            cout << "[" << i << "] "
-            << "ID: " << this->table[i]->id
-            << ", Full Name: " << this->table[i]->fullName
-            << ", Address: " << this->table[i]->address << "\n";
+/**
+ * @brief Вывод хеш-таблицы на экран.
+ * 
+ * Печатает содержимое хеш-таблицы, выводя для каждой ячейки таблицы ее индекс и все записи, 
+ * которые в ней хранятся. Если ячейка пуста, выводится "{}".
+ */
+void HashTable::print() const {
+    for (int i = 0; i < size; i++) {
+        cout << "[" << i << "]: ";
+        if (table[i].empty()) {
+            cout << "{}\n";
+        } else {
+            for (const auto& account : table[i]) {
+                cout << "{ID: " << account.id
+                        << ", Name: " << account.fullName
+                        << ", Address: " << account.address << "} ";
+            }
+            cout << "\n";
         }
     }
 }

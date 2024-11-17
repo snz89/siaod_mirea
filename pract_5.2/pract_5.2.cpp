@@ -10,14 +10,27 @@
 
 using namespace std;
 
-// Запись о студенте
-struct Record {
-    int passbookId;
-    int groupId;
+constexpr int minCarNumber = 10000;
+constexpr int maxCarNumber = 99999;
+constexpr int maxNumberCount = maxCarNumber - minCarNumber + 1;
+
+/**
+ * Запись о владельце авто
+ * @param carNumber Номер автомобиля.
+ * @param carBrand Марка автомобиля.
+ * @param fullName Полное имя владельца.
+ */
+struct CarOwner {
+    int carNumber;
+    char carBrand[16];
     char fullName[56];
 };
 
-// Запись пары ключ-смещение для таблицы смещений
+/**
+ * Запись пары ключ-смещение для таблицы смещений.
+ * @param key Ключ
+ * @param offset Смещение.
+ */
 struct OffsetRecord {
     int key;
     long offset;
@@ -30,18 +43,21 @@ struct OffsetRecord {
     }
 };
 
-// Генерация текстового файла с информацией о студентах
-// Предусловие: fileName - имя файла, numRecords - количество записей
-// Постусловие: создан текстовый файл с numRecords записей о студентах, 
-// номера зачеток уникальны и находятся в диапазоне [10000, 99999]
+/**
+ * Генерация текстового файла с информацией о владельцах авто.
+ * @param fileName Имя файла.
+ * @param numRecords Количество генерируемых записей.
+ */
 void generateTextFile(const char* fileName, int numRecords) {
-    const int minPassbookId = 10000;
-    const int maxPassbookId = 99999;
-    const int maxIdCount = maxPassbookId - minPassbookId + 1;
+    const char carBrands[][16] = {
+        "Toyota", "Honda", "Ford", "BMW", "Audi", "Mercedes",
+        "Volkswagen", "Chevrolet", "Nissan", "Hyundai"
+    };
+    const int brandCount = sizeof(carBrands) / sizeof(carBrands[0]);
 
     // Создание вектора с уникальными id
-    vector<int> numbers(maxIdCount);
-    iota(numbers.begin(), numbers.end(), minPassbookId);
+    vector<int> numbers(maxNumberCount);
+    iota(numbers.begin(), numbers.end(), minCarNumber);
 
     random_device rd;
     mt19937 g(rd());
@@ -57,16 +73,18 @@ void generateTextFile(const char* fileName, int numRecords) {
 
     for (int i = 0; i < numRecords; i++) {
         int id = numbers[i];
-        int groupId = id % 50 + 10;
-        textFile << id << " " << groupId << " " << "Name_" << i + 1 << "\n";
+        const char* carBrand = carBrands[g() % brandCount];
+        textFile << id << " " << carBrand << " " << "Name_" << i + 1 << "\n";
     }
 
     textFile.close();
 }
 
-// Конвертация информации о студентах в бинарный файл
-// Предусловие: textFile - имя текстового файла, binaryFile - имя бинарного файла
-// Постусловие: создан бинарный файл, содержащий записи о студентах из textFile
+/**
+ * Конвертация информации о студентах в бинарный файл
+ * @param textFile Имя входного текстового файла.
+ * @param binaryFile Имя выходного бинарного файла.
+ */
 void textToBinary(const char* textFile, const char* binaryFile) {
     // Открытие файлов
     ifstream text(textFile);
@@ -82,21 +100,23 @@ void textToBinary(const char* textFile, const char* binaryFile) {
         return;
     }
 
-    Record record;
+    CarOwner record;
 
-    while (text >> record.passbookId >> record.groupId) {
+    while (text >> record.carNumber >> record.carBrand) {
         text.ignore();
         text.getline(record.fullName, sizeof(record.fullName));
         binary.write((char*)(&record), sizeof(record));
     }
 }
 
-// Линейный поиск студента по ключу
-// Предусловие: binaryFile - имя существующего бинарного файла, 
-// searchKey - ключ для поиска
-// Постусловие: возвращен указатель на копию найденной записи 
-// или nullptr, если запись не найдена. Файл закрыт.
-Record* linearSearch(const char* binaryFile, int searchKey) {
+/**
+* Линейный поиск по ключу.
+* @param binaryFile Имя входного бинарного файла
+* @param searchKey Ключ для поиска.
+* @return CarOwner* Указатель на копию найденной записи.
+* @warning Если запись не найдена, возвращается nullptr
+*/
+CarOwner* linearSearch(const char* binaryFile, int searchKey) {
     ifstream binary(binaryFile, ios::binary);
 
     if (!binary) {
@@ -104,11 +124,11 @@ Record* linearSearch(const char* binaryFile, int searchKey) {
         return nullptr;
     }
 
-    Record record;
+    CarOwner record;
 
     while (binary.read((char*)(&record), sizeof(record))) {
-        if (record.passbookId == searchKey) {
-            return new Record(record);
+        if (record.carNumber == searchKey) {
+            return new CarOwner(record);
         }
     }
 
@@ -116,7 +136,11 @@ Record* linearSearch(const char* binaryFile, int searchKey) {
     return nullptr;
 }
 
-// Генерация таблицы со смещениями
+/**
+ * Генерация таблицы со смещениями на записи.
+ * @param binaryFile Имя входного бинарного файла.
+ * @return vector<OffsetRecord> Вектор смещений на записи.
+ */
 vector<OffsetRecord> createOffsetTable(const char* binaryFile) {
     ifstream binary(binaryFile, ios::binary);
 
@@ -126,12 +150,12 @@ vector<OffsetRecord> createOffsetTable(const char* binaryFile) {
     }
 
     vector<OffsetRecord> offsetTable;
-    Record record;
+    CarOwner record;
     long offset = 0;
     
     while (binary.read((char*)(&record), sizeof(record))) {
-        offsetTable.push_back({record.passbookId, offset});
-        offset += sizeof(Record);
+        offsetTable.push_back({record.carNumber, offset});
+        offset += sizeof(CarOwner);
     }
 
     binary.close();
@@ -141,9 +165,11 @@ vector<OffsetRecord> createOffsetTable(const char* binaryFile) {
     return offsetTable;
 }
 
-// Генерация таблицы смещений для однородного бинарного поиска
-// Предусловие: размер таблицы со смещениями на записи
-// Постусловие: таблицы со смещениями для поиска
+/**
+ * Генерация таблицы смещений для однородного бинарного поиска.
+ * @param tableSize Размер таблицы со смещениями на записи.
+ * @return vector<int> Вектор смещений.
+ */
 vector<int> generateDeltaTable(int tableSize) {
     vector<int> deltaTable;
     int j = 1;
@@ -154,9 +180,12 @@ vector<int> generateDeltaTable(int tableSize) {
     return deltaTable;
 }
 
-// Однородный бинарный поиск с таблицей смещений
-// Предусловие: искомый ключ, таблица со смещениями на записи
-// Постусловие: смещение на запись
+/**
+ * Однородный бинарный поиск с таблицей смещений.
+ * @param key Искомый ключ.
+ * @param offsetTable Таблица со смещениями на записи.
+ * @return long Смещение найденной записи или -1, если запись не найдена.
+ */
 long searchOffset(int key, const vector<OffsetRecord>& offsetTable) {
     int tableSize = offsetTable.size();
     if (tableSize == 0) {
@@ -198,10 +227,79 @@ long searchOffset(int key, const vector<OffsetRecord>& offsetTable) {
     return -1;
 }
 
-// Поиск информации о студенте по смещению
-// Предусловие: смещение на запись, название бинарного файла
-// Постусловие: запись о студенте (Record)
-Record* searchRecordByOffset(long offset, const char* binaryFile) {
+/**
+ * Вычисляет число Фибоначчи по индексу.
+ * @param n Индекс числа Фибоначчи.
+ * @return long Число Фибоначчи.
+ */
+long fibonacci(int n) {
+    if (n == 0 || n == 1) return n;
+    return fibonacci(n - 1) + fibonacci(n - 2);
+}
+
+/**
+ * Поиск Фибонначи по таблице смещений
+ * @param key Искомый ключ.
+ * @param offsetTable Таблица со смещениями на записи.
+ * @return long Смещение найденной записи или -1, если запись не найдена.
+ */
+long fibonacciSearch(int key, const vector<OffsetRecord>& offsetTable) {
+    int N = offsetTable.size();
+    if (N == 0) {
+        return -1;
+    }
+
+    // Инициализация чисел Фибоначчи
+    int fibMm2 = 0; // (m-2)'e число Фибоначчи
+    int fibMm1 = 1; // (m-1)'e число Фибоначчи
+    int fibM = fibMm2 + fibMm1; // m'е число Фибоначчи
+
+    // Находим минимальное m, для которого fibM >= N
+    while (fibM < N) {
+        fibMm2 = fibMm1;
+        fibMm1 = fibM;
+        fibM = fibMm2 + fibMm1;
+    }
+
+    // Смещение для проверки элементов с конца
+    int offset = -1;
+
+    while (fibM > 1) {
+        // Проверяем индекс
+        int i = min(offset + fibMm2, N - 1);
+
+        // Сравниваем ключ с ключом на позиции i
+        if (offsetTable[i].key < key) {
+            // Сдвигаем окно поиска вправо
+            fibM = fibMm1;
+            fibMm1 = fibMm2;
+            fibMm2 = fibM - fibMm1;
+            offset = i;
+        } else if (offsetTable[i].key > key) {
+            // Сдвигаем окно поиска влево
+            fibM = fibMm2;
+            fibMm1 = fibMm1 - fibMm2;
+            fibMm2 = fibM - fibMm1;
+        } else {
+            return offsetTable[i].offset; // Найдено
+        }
+    }
+
+    // Проверяем последний возможный элемент
+    if (fibMm1 && offsetTable[offset + 1].key == key) {
+        return offsetTable[offset + 1].offset;
+    }
+
+    return -1; // Не найдено
+}
+
+/**
+ * Поиск информации о студенте по смещению.
+ * @param offset смещение
+ * @param binaryFile имя бинарного файла.
+ * @return Указатель на копию записи о студенте или nullptr, если запись не найдена.
+ */
+CarOwner* searchRecordByOffset(long offset, const char* binaryFile) {
     ifstream binary(binaryFile, ios::binary);
 
     if (!binary) {
@@ -210,25 +308,25 @@ Record* searchRecordByOffset(long offset, const char* binaryFile) {
     }
 
     binary.seekg(offset);
-    Record record;
-    binary.read((char*)&record, sizeof(Record));
+    CarOwner record;
+    binary.read((char*)&record, sizeof(CarOwner));
     binary.close();
 
-    return new Record(record);
+    return new CarOwner(record);
 }
 
 void Task2(int searchKey) {
     auto start = chrono::high_resolution_clock::now();
 
-    Record* result = linearSearch("data.bin", searchKey);
+    CarOwner* result = linearSearch("data.bin", searchKey);
 
     auto end = chrono::high_resolution_clock::now();
     auto duration = chrono::duration_cast<chrono::milliseconds>(end - start);
 
     if (result) {
         cout << "Found: "
-            << result->passbookId << " "
-            << result->groupId << " "
+            << result->carNumber << " "
+            << result->carBrand << " "
             << result->fullName << "\n";
         delete result;
     }
@@ -244,14 +342,15 @@ void Task3(int searchKey) {
     vector<OffsetRecord> offsetTable = createOffsetTable("data.bin");
 
     auto start = chrono::high_resolution_clock::now();
-
-    long offset = searchOffset(searchKey, offsetTable);
+    
+    // TODO: Заменить однородный бинарный поиск на Фибоначчи поиск
+    long offset = fibonacciSearch(searchKey, offsetTable);
 
     if (offset != -1) {
-        Record* result = searchRecordByOffset(offset, "data.bin");
+        CarOwner* result = searchRecordByOffset(offset, "data.bin");
         cout << "Found: "
-            << result->passbookId << " "
-            << result->groupId << " "
+            << result->carNumber << " "
+            << result->carBrand << " "
             << result->fullName << "\n";
         delete result;
     }
@@ -266,13 +365,14 @@ void Task3(int searchKey) {
 }
 
 int main() {
-    // Task 1
-    generateTextFile("data.txt", 100);
-    textToBinary("data.txt", "data.bin");
+    // generateTextFile("data.txt", 100);
+    // textToBinary("data.txt", "data.bin");
 
-    int searchKey = 37600;
+    int searchKey = 29944;
 
+    cout << "Task 2\n";
     Task2(searchKey);
+    cout << "\nTask 3\n";
     Task3(searchKey);
     return 0;
 }

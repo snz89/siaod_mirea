@@ -2,23 +2,25 @@
 #define HASH_TABLE
 
 #include "bank_account.h"
+#include <list>
+#include <vector>
+
+using namespace std;
 
 class HashTable {
 private:
-    BankAccount** table;
+    vector<list<BankAccount>> table;
     int size;
     int count;
     int hashFunction(int key);
-    int hashFunction2(int key);
-    void resize();
+    void rehash();
+    double loadFactor() const;
 public:
-    HashTable();
-    HashTable(int size);
-    ~HashTable();
+    HashTable(int size = 10);
     bool insert(int key, const string& fullName, const string& address);
     bool remove(int key);
     BankAccount* search(int key);
-    void print();
+    void print() const;
 };
 
 #endif

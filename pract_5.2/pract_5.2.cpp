@@ -23,7 +23,7 @@ constexpr int maxNumberCount = maxCarNumber - minCarNumber + 1;
 struct CarOwner {
     int carNumber;
     char carBrand[16];
-    char fullName[56];
+    char fullName[44];
 };
 
 /**
@@ -249,26 +249,21 @@ long fibonacciSearch(int key, const vector<OffsetRecord>& offsetTable) {
         return -1;
     }
 
-    // Инициализация чисел Фибоначчи
-    int fibMm2 = 0; // (m-2)'e число Фибоначчи
-    int fibMm1 = 1; // (m-1)'e число Фибоначчи
-    int fibM = fibMm2 + fibMm1; // m'е число Фибоначчи
+    int fibMm2 = 0;
+    int fibMm1 = 1;
+    int fibM = fibMm2 + fibMm1;
 
-    // Находим минимальное m, для которого fibM >= N
     while (fibM < N) {
         fibMm2 = fibMm1;
         fibMm1 = fibM;
         fibM = fibMm2 + fibMm1;
     }
 
-    // Смещение для проверки элементов с конца
     int offset = -1;
 
     while (fibM > 1) {
-        // Проверяем индекс
         int i = min(offset + fibMm2, N - 1);
 
-        // Сравниваем ключ с ключом на позиции i
         if (offsetTable[i].key < key) {
             // Сдвигаем окно поиска вправо
             fibM = fibMm1;
@@ -281,16 +276,15 @@ long fibonacciSearch(int key, const vector<OffsetRecord>& offsetTable) {
             fibMm1 = fibMm1 - fibMm2;
             fibMm2 = fibM - fibMm1;
         } else {
-            return offsetTable[i].offset; // Найдено
+            return offsetTable[i].offset;
         }
     }
 
-    // Проверяем последний возможный элемент
     if (fibMm1 && offsetTable[offset + 1].key == key) {
         return offsetTable[offset + 1].offset;
     }
 
-    return -1; // Не найдено
+    return -1;
 }
 
 /**
@@ -342,8 +336,6 @@ void Task3(int searchKey) {
     vector<OffsetRecord> offsetTable = createOffsetTable("data.bin");
 
     auto start = chrono::high_resolution_clock::now();
-    
-    // TODO: Заменить однородный бинарный поиск на Фибоначчи поиск
     long offset = fibonacciSearch(searchKey, offsetTable);
 
     if (offset != -1) {
@@ -365,10 +357,10 @@ void Task3(int searchKey) {
 }
 
 int main() {
-    // generateTextFile("data.txt", 100);
+    // generateTextFile("data.txt", 10000);
     // textToBinary("data.txt", "data.bin");
 
-    int searchKey = 29944;
+    int searchKey = 67867;
 
     cout << "Task 2\n";
     Task2(searchKey);

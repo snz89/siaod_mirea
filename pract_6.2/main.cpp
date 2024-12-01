@@ -1,160 +1,186 @@
 #include <iostream>
-#include <vector>
 #include <fstream>
 #include <string>
+#include <vector>
 #include <sstream>
 #include <algorithm>
+#include <unordered_map>
 
 using namespace std;
 
-// Функция для чтения файла в строку
-string fileToString(const string& filename) {
-    ifstream file(filename);
+/**
+ * Разделяет текст на слова и фильтрует слова, начинающиеся с заданной подстроки.
+ * @param text Текст для разбиения на слова.
+ * @param substring Заданная подстрока для фильтрации.
+ * @return Вектор слов, начинающихся с заданной подстроки.
+ */
+vector<string> splitAndFilter(const string& text, const string& substring) {
+    string punctuation = ",.!?;:-";
+    string cleanedText = text;
 
-    if (!file.is_open()) {
-        cerr << "Error opening file: " << filename << endl;
-        return "";
-    }
-
-    stringstream buffer;
-    buffer << file.rdbuf();
-    return buffer.str();
-}
-
-// Функция для разделения строки на слова
-vector<string> splitIntoWords(const string& text) {
-    vector<string> words;
-    string currentWord;
-
-    for (char c : text) {
-        if (isalnum(c)) {
-            currentWord += c;
-        } else if (!currentWord.empty()) {
-            words.push_back(currentWord);
-            currentWord = "";
+    for (char& ch : cleanedText) {
+        if (punctuation.find(ch) != string::npos) {
+            ch = ' ';
         }
     }
-    if (!currentWord.empty()) {
-        words.push_back(currentWord);
+
+    vector<string> words;
+    istringstream stream(cleanedText);
+    string word;
+    while (stream >> word) {
+        if (word.size() >= substring.size() && 
+            equal(substring.begin(), substring.end(), word.begin(), 
+                       [](char a, char b) { return tolower(a) == tolower(b); })) {
+            words.push_back(word);
+        }
     }
 
     return words;
 }
 
-// Функция для проверки окончания слова на заданную подстроку
-bool endsWithSubstring(const string& word, const string& substring) {
-    if (word.length() < substring.length()) {
-        return false;
-    }
-    return word.substr(word.length() - substring.length()) == substring;
-}
+/**
+ * Дан текст из слов, разделенных знаками препинания.
+ * Сформировать массив из слов, в которых заданная подстрока размещается с первой позиции
+ * @param fileName Имя файла для чтения текста.
+ * @param substring Заданная подстрока для фильтрации.
+ */
+void task_1(const string& fileName, const string& substring) {
+    ifstream file(fileName);
 
-// Функция для формирования массива слов, оканчивающихся заданной подстрокой
-vector<string> filterWordsEndingWithSubstring(const vector<string>& words, const string& substring) {
-    vector<string> filteredWords;
-    for (const string& word : words) {
-        if (endsWithSubstring(word, substring)) {
-            filteredWords.push_back(word);
-        }
+    if (!file) {
+        cerr << "Error: can't open file: " << fileName << endl;
+        return;
     }
-    return filteredWords;
-}
 
-// Дан текст, состоящий из слов, разделенных знаками препинания. Сформировать
-// массив из слов, в которых заданная подстрока размещается в конце слова
-void Task1(const string& inputFile, const string& substring) {
-    auto text = fileToString(inputFile);
-    auto words = splitIntoWords(text);
-    auto filteredWords = filterWordsEndingWithSubstring(words, substring);
-    cout << "[TASK 1] Words ending with '" << substring << "': ";
-    for (const string& word : filteredWords) {
+    string text((istreambuf_iterator<char>(file)), istreambuf_iterator<char>());
+
+    file.close();
+
+    vector<string> filteredWords = splitAndFilter(text, substring);
+
+    cout << "Words, starts with \"" << substring << "\":" << endl;
+    for (const auto& word : filteredWords) {
         cout << word << " ";
     }
-    cout << "\n";
 }
 
-// Функция для чтения данных из файла
-pair<string, string> readPairDataFromFile(const string& filename) {
-    ifstream file(filename);
-    if (!file.is_open()) {
-        cerr << "Ошибка открытия файла: " << filename << endl;
-        return {"", ""}; // Возвращаем пустые строки в случае ошибки
+// Функция для построения таблицы смещений по плохому символу
+vector<int> badCharTable(const string& pattern) {
+    int patternLength = pattern.size();
+    vector<int> badChar(256, -1);
+    
+    for (int i = 0; i < patternLength; ++i) {
+        badChar[static_cast<unsigned char>(pattern[i])] = i;
     }
+    return badChar;
+}
+
+
+// Функция для построения таблицы смещений по хорошему суффиксу
+vector<int> goodSuffixTable(const string& pattern) {
+    int patternLength = pattern.size();
+    vector<int> goodSuffix(patternLength + 1, patternLength);
+
+    vector<int> border(patternLength + 1, 0);
+    int patternIndex = patternLength;
+    int borderIndex = patternLength + 1;
+
+    border[patternIndex] = borderIndex;
+    while (patternIndex > 0) {
+        while (borderIndex <= patternLength && pattern[patternIndex - 1] != pattern[borderIndex - 1]) {
+            if (goodSuffix[borderIndex] == patternLength) {
+                goodSuffix[borderIndex] = borderIndex - patternIndex;
+            }
+            borderIndex = border[borderIndex];
+        }
+        --patternIndex;
+        --borderIndex;
+        border[patternIndex] = borderIndex;
+    }
+
+    for (int i = 0; i <= patternLength; ++i) {
+        if (goodSuffix[i] == patternLength) {
+            goodSuffix[i] = borderIndex;
+        }
+        if (i == borderIndex) {
+            borderIndex = border[borderIndex];
+        }
+    }
+
+    return goodSuffix;
+}
+
+vector<int> TurboBoyerMooreSearch(const string& text, const string& pattern) {
+    int patternLength = pattern.length();
+    int textLength = text.length();
+    int textIndex = 0;
+    int turboShiftLength = 0;
+    int shift = patternLength;
+    vector<int> matchPositions;
+
+    if (patternLength == 0) {
+        return matchPositions;
+    }
+
+    vector<int> badCharacterShift = badCharTable(pattern);
+    vector<int> goodSuffixShift = goodSuffixTable(pattern);
+
+    while (textIndex <= textLength - patternLength) {
+        int patternIndex = patternLength - 1;
+        while (patternIndex >= 0 && pattern[patternIndex] == text[textIndex + patternIndex]) {
+            --patternIndex;
+            if (turboShiftLength != 0 && patternIndex == patternLength - 1 - shift) {
+                patternIndex -= turboShiftLength;
+            }
+        }
+        if (patternIndex < 0) {
+            matchPositions.push_back(textIndex);
+            shift = goodSuffixShift[0];
+            turboShiftLength = patternLength - shift;
+        } else {
+            int v = patternLength - 1 - patternIndex;
+            int turboShift = turboShiftLength - v;
+            int bCShift = badCharacterShift[text[textIndex + patternIndex]] - patternLength + patternIndex + 1;
+            shift = max({turboShift, bCShift, goodSuffixShift[patternIndex + 1]});
+            if (shift == goodSuffixShift[patternIndex + 1]) {
+                turboShiftLength = min((patternLength - shift), v);
+            } else {
+                if (turboShift < bCShift) {
+                    shift = min(shift, (turboShiftLength + 1));
+                }
+                turboShiftLength = 0;
+            }
+        }
+        textIndex += shift;
+    }
+    return matchPositions;
+}
+
+void task_2(const string& fileName) {
+    ifstream file(fileName);
+    if (!file.is_open()) {
+        cerr << "Error: Could not open file!" << endl;
+        return;
+    }
+
     string pattern, text;
     getline(file, pattern);
     getline(file, text);
+
     file.close();
-    return {pattern, text};
-}
 
-// Функция для вычисления хеша строки
-long long hashString(const string& s, int prime, int base) {
-    long long hash = 0;
-    long long power = 1;
-    for (int i = 0; i < s.length(); ++i) {
-        hash = (hash + (s[i] * power)) % prime;
-        power = (power * base) % prime;
-    }
-    return hash;
-}
-
-// Функция для реализации алгоритма Рабина-Карпа
-int rabinKarp(const string& text, const string& pattern) {
-    int n = text.length();
-    int m = pattern.length();
-    if (m > n) {
-        return 0;
+    if (pattern.empty() || text.empty()) {
+        cerr << "Error: Pattern or text is empty!" << endl;
+        return;
     }
 
-    int prime = 101; // Или большее простое число, например, 1000000007
-    int base = 256;   
-
-    long long patternHash = hashString(pattern, prime, base);
-    long long textHash = hashString(text.substr(0, m), prime, base);
-    long long power = 1;
-    for (int i = 0; i < m - 1; ++i) {
-        power = (power * base) % prime;
+    auto v = TurboBoyerMooreSearch(text, pattern);
+    for (auto i : v) {
+        cout << i << " ";
     }
-
-    int count = 0;
-    for (int i = 0; i <= n - m; ++i) {
-        if (patternHash == textHash) {
-            if (text.substr(i, m) == pattern) {
-                count++;
-            }
-        }
-        if (i < n - m) {
-            textHash = (1LL * base * (textHash - 1LL * text[i] * power) + 1LL * text[i + m]) % prime;
-            if (textHash < 0) {
-                textHash += prime;
-            }
-        }
-    }
-    return count;
-}
-
-
-/*
- * В текстовом файле хранятся входные данные:
- * на первой сроке – подстрока (образец)длиной не более 17 символов для поиска в тексте;
- * со второй строки – текст (строка), в котором осуществляется поиск образца.
- * Строка, в которой надо искать, не ограниченна по длине.
- * Применяя алгоритм Рабина-Карпа определить количество вхождений в текст заданного образца
-*/
-int Task2(const string& inputFile) {
-    pair<string, string> data = readPairDataFromFile(inputFile);
-
-    if (data.first.empty() || data.second.empty()) {
-        return 1;
-    }
-
-    int occurrences = rabinKarp(data.second, data.first);
-    cout << "[TASK 2] Occurrences: " << occurrences << endl;
-
-    return 0;
+    cout << endl;
 }
 
 int main() {
-    Task1("example_1.txt", "ing");
-    Task2("example_2.txt");
+    task_2("task_2.txt");
 }

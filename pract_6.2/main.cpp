@@ -58,7 +58,9 @@ void task_1(const string& fileName, const string& substring) {
 
     vector<string> filteredWords = splitAndFilter(text, substring);
 
-    cout << "Words, starts with \"" << substring << "\":" << endl;
+    cout << "Source text: " << text << "\n"
+    << "Prefix pattern: " << substring << "\n";
+    cout << "Words, starts with \"" << substring << "\": ";
     for (const auto& word : filteredWords) {
         cout << word << " ";
     }
@@ -173,6 +175,10 @@ void task_2(const string& fileName) {
         cerr << "Error: Pattern or text is empty!" << endl;
         return;
     }
+
+    cout << "Source text: " << text << "\n"
+    << "Pattern: " << pattern << "\n"
+    << "Matches: ";
 
     auto v = TurboBoyerMooreSearch(text, pattern);
     for (auto i : v) {
